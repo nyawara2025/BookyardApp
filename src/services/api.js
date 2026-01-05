@@ -2,7 +2,7 @@
 // Your n8n webhook URL for the Bookyard Academy chatbot
 const N8N_WEBHOOK_URL = 'https://n8n.tenear.com/webhook/parent-chat';
 
-const TIMEOUT_MS = 15000; // 15 second timeout
+const TIMEOUT_MS = 60000; // 15 second timeout
 
 export const chatService = {
   /**
