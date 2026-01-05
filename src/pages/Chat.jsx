@@ -135,6 +135,7 @@ export default function Chat() {
                 <span className="typing-dot"></span>
                 <span className="typing-dot"></span>
               </div>
+              <span className="typing-text">Gathering information, please hang on..</span>
             </div>
           )}
 
