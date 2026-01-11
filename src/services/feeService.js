@@ -1,0 +1,259 @@
+// Fee Service for Bookyard Academy
+// Integrates with n8n webhooks for fee operations
+
+import apiClient, { 
+  getStudentFees as fetchStudentFees,
+  getTransactionHistory as fetchTransactions,
+  processPayment as submitPayment,
+  getStoredParentId 
+} from '../utils/apiClient';
+
+/**
+ * Get fee data for all students of the logged-in parent
+ * @returns {Promise<array>} - Array of student fee summaries
+ */
+export const getStudentFees = async () => {
+  const parentId = getStoredParentId();
+  if (!parentId) {
+    throw new Error('User not authenticated');
+  }
+  
+  return await fetchStudentFees(parentId);
+};
+
+/**
+ * Get fee data for a specific student
+ * @param {string} studentId - Student UUID
+ * @returns {Promise<object|null>} - Student fee data or null
+ */
+export const getStudentFeeById = async (studentId) => {
+  const allFees = await getStudentFees();
+  return allFees.find(s => s.student_id === studentId) || null;
+};
+
+/**
+ * Get current term fee summary for a student
+ * @param {string} studentId - Optional Student UUID (if null, returns aggregate for all students)
+ * @returns {Promise<object|null>} - Term summary or aggregate summary
+ */
+export const getCurrentTermSummary = async (studentId = null) => {
+  const allStudents = await getStudentFees();
+  
+  if (!allStudents || allStudents.length === 0) {
+    return null;
+  }
+
+  // If specific student requested, find them
+  if (studentId) {
+    const studentData = allStudents.find(s => s.student_id === studentId);
+    if (!studentData) return null;
+    
+    return {
+      studentId: studentData.student_id,
+      studentName: studentData.student_name || `${studentData.first_name} ${studentData.last_name}`,
+      grade: studentData.grade,
+      totalFeeDue: studentData.total_fee_due,
+      totalPaid: studentData.total_paid,
+      balance: studentData.balance,
+      status: studentData.balance > 0 ? 'pending' : 'paid'
+    };
+  }
+  
+  // No specific student requested - calculate totals across all students
+  const totalFeeDue = allStudents.reduce((sum, s) => sum + (parseFloat(s.total_fee_due) || 0), 0);
+  const totalPaid = allStudents.reduce((sum, s) => sum + (parseFloat(s.total_paid) || 0), 0);
+  const balance = allStudents.reduce((sum, s) => sum + (parseFloat(s.balance) || 0), 0);
+  
+  return {
+    studentId: allStudents[0]?.student_id,
+    studentName: 'All Students',
+    grade: `${allStudents.length} Student${allStudents.length > 1 ? 's' : ''}`,
+    totalFeeDue,
+    totalPaid,
+    balance,
+    status: balance > 0 ? 'pending' : 'paid',
+    isAggregate: true
+  };
+};
+
+/**
+ * Get all students with their fee summaries
+ * @returns {Promise<array>} - Array of student fee summaries
+ */
+export const getAllStudentSummaries = async () => {
+  const fees = await getStudentFees();
+  return fees.map(student => ({
+    studentId: student.student_id,
+    studentName: `${student.first_name} ${student.last_name}`,
+    grade: student.grade,
+    totalFeeDue: parseFloat(student.total_fee_due) || 0,
+    totalPaid: parseFloat(student.total_paid) || 0,
+    balance: parseFloat(student.balance) || 0,
+    status: (parseFloat(student.balance) || 0) > 0 ? 'pending' : 'paid'
+  }));
+};
+
+/**
+ * Get transaction history for the logged-in parent
+ * @param {string} studentId - Optional student UUID to filter
+ * @returns {Promise<array>} - Array of transaction records
+ */
+export const getTransactions = async (studentId = null) => {
+  const parentId = getStoredParentId();
+  if (!parentId) {
+    throw new Error('User not authenticated');
+  }
+  
+  const transactions = await fetchTransactions(parentId);
+  
+  // Filter by student if specified
+  if (studentId) {
+    return transactions.filter(t => t.student_id === studentId);
+  }
+  
+  return transactions;
+};
+
+/**
+ * Process a payment for an invoice
+ * @param {object} paymentData - Payment details
+ * @param {string} paymentData.invoice_id - Invoice UUID
+ * @param {number} paymentData.amount - Payment amount
+ * @param {string} paymentData.payment_method - Payment method (e.g., 'bank_transfer', 'mpesa')
+ * @param {string} paymentData.reference_number - Payment reference
+ * @returns {Promise<object>} - Transaction result
+ */
+export const processPayment = async (paymentData) => {
+  const parentId = getStoredParentId();
+  if (!parentId) {
+    throw new Error('User not authenticated');
+  }
+  
+  // Validate payment data
+  if (!paymentData.invoice_id) {
+    throw new Error('Invoice ID is required');
+  }
+  
+  if (!paymentData.amount || paymentData.amount <= 0) {
+    throw new Error('Valid payment amount is required');
+  }
+  
+  if (!paymentData.payment_method) {
+    throw new Error('Payment method is required');
+  }
+  
+  // Submit payment
+  const result = await submitPayment({
+    ...paymentData,
+    parent_id: parentId
+  });
+  
+  return result;
+};
+
+/**
+ * Format currency for display
+ * @param {number} amount - Amount to format
+ * @returns {string} - Formatted currency string
+ */
+export const formatCurrency = (amount) => {
+  const num = parseFloat(amount) || 0;
+  return new Intl.NumberFormat('en-KE', {
+    style: 'currency',
+    currency: 'KES',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(num).replace('KES', 'KSHs ').trim();
+};
+
+/**
+ * Get status info (color and label)
+ * @param {string} status - Status string from API
+ * @returns {object} - Status configuration object
+ */
+export const getStatusInfo = (status) => {
+  const statusMap = {
+    'paid': {
+      label: 'Paid',
+      color: '#10B981',
+      bgColor: '#D1FAE5',
+      icon: '✓'
+    },
+    'pending': {
+      label: 'Pending',
+      color: '#F59E0B',
+      bgColor: '#FEF3C7',
+      icon: '⚠'
+    },
+    'overdue': {
+      label: 'Overdue',
+      color: '#EF4444',
+      bgColor: '#FEE2E2',
+      icon: '!'
+    },
+    'due_soon': {
+      label: 'Due Soon',
+      color: '#F59E0B',
+      bgColor: '#FEF3C7',
+      icon: '⚠'
+    },
+    'upcoming': {
+      label: 'Upcoming',
+      color: '#6B7280',
+      bgColor: '#F3F4F6',
+      icon: '○'
+    }
+  };
+  
+  return statusMap[status?.toLowerCase()] || statusMap['upcoming'];
+};
+
+/**
+ * Get next payment due info for a student
+ * @param {string} studentId - Student UUID
+ * @returns {Promise<object|null>} - Payment info object
+ */
+export const getNextPaymentInfo = async (studentId) => {
+  const studentData = await getStudentFeeById(studentId);
+  if (!studentData) return null;
+  
+  const balance = parseFloat(studentData.balance) || 0;
+  
+  return {
+    balance: balance,
+    isOverdue: balance > 0 && studentData.status === 'overdue',
+    isPending: balance > 0
+  };
+};
+
+/**
+ * Calculate total balance across all students
+ * @returns {Promise<number>} - Total balance amount
+ */
+export const getTotalBalance = async () => {
+  const students = await getAllStudentSummaries();
+  return students.reduce((total, student) => total + student.balance, 0);
+};
+
+/**
+ * Calculate total paid across all students
+ * @returns {Promise<number>} - Total paid amount
+ */
+export const getTotalPaid = async () => {
+  const students = await getAllStudentSummaries();
+  return students.reduce((total, student) => total + student.totalPaid, 0);
+};
+
+export default {
+  getStudentFees,
+  getStudentFeeById,
+  getCurrentTermSummary,
+  getAllStudentSummaries,
+  getTransactions,
+  processPayment,
+  formatCurrency,
+  getStatusInfo,
+  getNextPaymentInfo,
+  getTotalBalance,
+  getTotalPaid
+};

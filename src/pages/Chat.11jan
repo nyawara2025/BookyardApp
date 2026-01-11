@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { chatService } from '../services/api'
 
 export default function Chat() {
   const [messages, setMessages] = useState([
@@ -11,18 +10,17 @@ export default function Chat() {
     },
   ])
   const [inputValue, setInputValue] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
+  }, [messages])
 
   const formatTime = (date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!inputValue.trim()) return
 
     const userMessage = {
@@ -34,30 +32,17 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, userMessage])
     setInputValue('')
-    setIsTyping(true)
 
-    try {
-      const response = await chatService.sendMessage(userMessage.text)
-      
+    // Simulate bot response
+    setTimeout(() => {
       const botMessage = {
         id: Date.now() + 1,
         type: 'bot',
-        text: response.reply,
+        text: "Thanks for your question! Our team will respond shortly.",
         time: new Date(),
       }
-      
       setMessages((prev) => [...prev, botMessage])
-    } catch (error) {
-      const errorMessage = {
-        id: Date.now() + 1,
-        type: 'error',
-        text: error.message || 'Sorry, something went wrong. Please try again.',
-        time: new Date(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsTyping(false)
-    }
+    }, 1000)
   }
 
   return (
@@ -82,10 +67,8 @@ export default function Chat() {
               borderRadius: '20px',
               background: message.type === 'user' 
                 ? 'linear-gradient(135deg, #1E7D36 0%, #22c55e 100%)' 
-                : message.type === 'error' 
-                  ? '#fee2e2'
-                  : '#ffffff',
-              color: message.type === 'user' ? 'white' : message.type === 'error' ? '#dc2626' : '#1e293b',
+                : '#ffffff',
+              color: message.type === 'user' ? 'white' : '#1e293b',
               boxShadow: message.type === 'bot' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
               borderBottomLeftRadius: message.type === 'bot' ? '6px' : '20px',
               borderBottomRightRadius: message.type === 'user' ? '6px' : '20px'
@@ -102,24 +85,6 @@ export default function Chat() {
             </div>
           </div>
         ))}
-
-        {isTyping && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-            <div style={{ 
-              padding: '14px 18px',
-              borderRadius: '20px',
-              background: '#ffffff',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              borderBottomLeftRadius: '6px',
-              display: 'flex',
-              gap: '5px'
-            }}>
-              <span style={{ width: '10px', height: '10px', background: '#94a3b8', borderRadius: '50%', animation: 'typing 1.4s infinite' }} />
-              <span style={{ width: '10px', height: '10px', background: '#94a3b8', borderRadius: '50%', animation: 'typing 1.4s infinite 0.2s' }} />
-              <span style={{ width: '10px', height: '10px', background: '#94a3b8', borderRadius: '50%', animation: 'typing 1.4s infinite 0.4s' }} />
-            </div>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -128,12 +93,6 @@ export default function Chat() {
         background: '#ffffff',
         borderTop: '1px solid #f1f5f9'
       }}>
-        <style>{`
-          @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-8px); }
-          }
-        `}</style>
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
