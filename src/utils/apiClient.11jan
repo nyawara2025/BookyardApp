@@ -103,16 +103,12 @@ export const loginParent = async (email, password) => {
 /**
  * Get student fees for the logged-in parent
  * @param {string} parentId - The parent's UUID
- * @param {string} admissionNo - The student's admission number
  * @returns {Promise<array>} - Array of student fee data
  */
-export const getStudentFees = async (parentId, admissionNo) => {
+export const getStudentFees = async (parentId) => {
   const response = await apiRequest(API_ENDPOINTS.getStudentFees, {
     method: 'POST',
-    body: JSON.stringify({ 
-      id: parentId,
-      admission_no: admissionNo 
-    }),
+    body: JSON.stringify({ id: parentId }),
   });
 
   // Handle different response formats
@@ -126,14 +122,6 @@ export const getStudentFees = async (parentId, admissionNo) => {
   
   if (response.data) {
     return response.data;
-  }
-  
-  // Handle direct object response (single student)
-  if (response && typeof response === 'object') {
-    // Check if it's a valid fee record (has key fields like balance, student_name, etc.)
-    if (response.balance !== undefined || response.student_name || response.admission_no) {
-      return [response];
-    }
   }
 
   return [];

@@ -5,7 +5,8 @@ import apiClient, {
   getStudentFees as fetchStudentFees,
   getTransactionHistory as fetchTransactions,
   processPayment as submitPayment,
-  getStoredParentId 
+  getStoredParentId,
+  getStoredUser
 } from '../utils/apiClient';
 
 /**
@@ -14,11 +15,14 @@ import apiClient, {
  */
 export const getStudentFees = async () => {
   const parentId = getStoredParentId();
+  const user = getStoredUser();
+  const admissionNo = user?.studentCode || null;
+  
   if (!parentId) {
     throw new Error('User not authenticated');
   }
   
-  return await fetchStudentFees(parentId);
+  return await fetchStudentFees(parentId, admissionNo);
 };
 
 /**
@@ -59,15 +63,32 @@ export const getCurrentTermSummary = async (studentId = null) => {
     };
   }
   
-  // No specific student requested - calculate totals across all students
-  const totalFeeDue = allStudents.reduce((sum, s) => sum + (parseFloat(s.total_fee_due) || 0), 0);
-  const totalPaid = allStudents.reduce((sum, s) => sum + (parseFloat(s.total_paid) || 0), 0);
-  const balance = allStudents.reduce((sum, s) => sum + (parseFloat(s.balance) || 0), 0);
+  // Handle both array response and single object response from n8n
+  const students = Array.isArray(allStudents) ? allStudents : [allStudents];
+  
+  if (students.length === 1) {
+    // Single student - use fields from n8n response
+    const s = students[0];
+    return {
+      studentId: s.student_id || s.admission_no,
+      studentName: s.student_name || s.studentName || s.name,
+      grade: s.grade,
+      totalFeeDue: s.total_fee_due || s.total_amount || s.totalFeeDue || 0,
+      totalPaid: s.total_paid || (s.total_amount - s.balance) || s.totalPaid || 0,
+      balance: s.balance,
+      status: (s.status || '').toLowerCase() || (s.balance > 0 ? 'pending' : 'paid')
+    };
+  }
+  
+  // Multiple students - calculate totals
+  const totalFeeDue = students.reduce((sum, s) => sum + (parseFloat(s.total_fee_due || s.total_amount || 0) || 0), 0);
+  const totalPaid = students.reduce((sum, s) => sum + (parseFloat(s.total_paid || s.total_amount - s.balance || 0) || 0), 0);
+  const balance = students.reduce((sum, s) => sum + (parseFloat(s.balance) || 0), 0);
   
   return {
-    studentId: allStudents[0]?.student_id,
+    studentId: students[0]?.student_id || students[0]?.admission_no,
     studentName: 'All Students',
-    grade: `${allStudents.length} Student${allStudents.length > 1 ? 's' : ''}`,
+    grade: `${students.length} Student${students.length > 1 ? 's' : ''}`,
     totalFeeDue,
     totalPaid,
     balance,

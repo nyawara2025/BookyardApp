@@ -40,12 +40,12 @@ const Home = () => {
         <h2 style={{ margin: '0 0 16px', fontSize: '1rem', color: '#1e293b' }}>Quick Actions</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
           {[
-            { label: 'Exams', color: '#DBEAFE', textColor: '#2563EB' },
-            { label: 'Fees', color: '#D1FAE5', textColor: '#059669' },
-            { label: 'Attendance', color: '#EDE9FE', textColor: '#7C3AED' },
-            { label: 'Lunch', color: '#FEF3C7', textColor: '#D97706' },
-            { label: 'Homework', color: '#FEE2E2', textColor: '#DC2626' },
-            { label: 'Transport', color: '#E0E7FF', textColor: '#4F46E5' }
+            { label: 'Exams', color: '#DBEAFE', textColor: '#2563EB', route: '/chat' },
+            { label: 'Fees', color: '#D1FAE5', textColor: '#059669', route: '/fees' },
+            { label: 'Attendance', color: '#EDE9FE', textColor: '#7C3AED', route: '/chat' },
+            { label: 'Lunch', color: '#FEF3C7', textColor: '#D97706', route: '/chat' },
+            { label: 'Homework', color: '#FEE2E2', textColor: '#DC2626', route: '/chat' },
+            { label: 'Transport', color: '#E0E7FF', textColor: '#4F46E5', route: '/chat' }
           ].map((action) => (
             <button
               key={action.label}
@@ -60,7 +60,7 @@ const Home = () => {
                 borderRadius: '12px',
                 cursor: 'pointer'
               }}
-              onClick={() => navigate('/chat')}
+              onClick={() => navigate(action.route)}
             >
               <div style={{ 
                 width: '40px', 

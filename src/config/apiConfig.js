@@ -14,16 +14,16 @@ export const API_ENDPOINTS = {
   parentLogin: `${getBaseUrl()}/parent-login`,
   
   // Fee Operations
-  getStudentFees: `${getBaseUrl()}/get-student-fees`,
-  getTransactionHistory: `${getBaseUrl()}/get-transaction-history`,
+  getStudentFees: `${getBaseUrl()}/student-fees`,
+  getTransactionHistory: `${getBaseUrl()}/transaction-history`,
   processPayment: `${getBaseUrl()}/process-payment`,
 };
 
 // Webhook paths (for reference)
 export const WEBHOOK_PATHS = {
   parentLogin: 'parent-login',
-  getStudentFees: 'get-student-fees',
-  getTransactionHistory: 'get-transaction-history',
+  getStudentFees: 'student-fees',
+  getTransactionHistory: 'transaction-history',
   processPayment: 'process-payment',
 };
 

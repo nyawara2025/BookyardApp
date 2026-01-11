@@ -33,21 +33,46 @@ export const getStudentFeeById = async (studentId) => {
 
 /**
  * Get current term fee summary for a student
- * @param {string} studentId - Student UUID
- * @returns {Promise<object|null>} - Term summary or null
+ * @param {string} studentId - Optional Student UUID (if null, returns aggregate for all students)
+ * @returns {Promise<object|null>} - Term summary or aggregate summary
  */
-export const getCurrentTermSummary = async (studentId) => {
-  const studentData = await getStudentFeeById(studentId);
-  if (!studentData) return null;
+export const getCurrentTermSummary = async (studentId = null) => {
+  const allStudents = await getStudentFees();
+  
+  if (!allStudents || allStudents.length === 0) {
+    return null;
+  }
+
+  // If specific student requested, find them
+  if (studentId) {
+    const studentData = allStudents.find(s => s.student_id === studentId);
+    if (!studentData) return null;
+    
+    return {
+      studentId: studentData.student_id,
+      studentName: studentData.student_name || `${studentData.first_name} ${studentData.last_name}`,
+      grade: studentData.grade,
+      totalFeeDue: studentData.total_fee_due,
+      totalPaid: studentData.total_paid,
+      balance: studentData.balance,
+      status: studentData.balance > 0 ? 'pending' : 'paid'
+    };
+  }
+  
+  // No specific student requested - calculate totals across all students
+  const totalFeeDue = allStudents.reduce((sum, s) => sum + (parseFloat(s.total_fee_due) || 0), 0);
+  const totalPaid = allStudents.reduce((sum, s) => sum + (parseFloat(s.total_paid) || 0), 0);
+  const balance = allStudents.reduce((sum, s) => sum + (parseFloat(s.balance) || 0), 0);
   
   return {
-    studentId: studentData.student_id,
-    studentName: `${studentData.first_name} ${studentData.last_name}`,
-    grade: studentData.grade,
-    totalFeeDue: studentData.total_fee_due,
-    totalPaid: studentData.total_paid,
-    balance: studentData.balance,
-    status: studentData.balance > 0 ? 'pending' : 'paid'
+    studentId: allStudents[0]?.student_id,
+    studentName: 'All Students',
+    grade: `${allStudents.length} Student${allStudents.length > 1 ? 's' : ''}`,
+    totalFeeDue,
+    totalPaid,
+    balance,
+    status: balance > 0 ? 'pending' : 'paid',
+    isAggregate: true
   };
 };
 
