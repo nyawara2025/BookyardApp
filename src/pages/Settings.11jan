@@ -1,36 +1,18 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 
 export default function Settings() {
   const [notifications, setNotifications] = useState(true)
   const [darkMode, setDarkMode] = useState(false)
-  const { logout: authLogout } = useAuth()
-  const navigate = useNavigate()
 
-  const handleLogout = () => {
-    // Clear auth data through AuthContext
-    authLogout()
-    // Navigate to login page
-    navigate('/login')
-  }
-
-  const SettingItem = ({ title, description, value, onToggle, onClick, isDestructive = false }) => (
+  const SettingItem = ({ title, description, value, onToggle }) => (
     <div style={{ 
       display: 'flex', 
       alignItems: 'center', 
       padding: '16px',
-      borderBottom: '1px solid #f1f5f9',
-      cursor: onClick ? 'pointer' : 'default',
-      background: onClick ? 'white' : 'transparent',
-      margin: onClick ? '8px 0' : 0,
-      borderRadius: onClick ? '12px' : 0,
-      boxShadow: onClick ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-    }}
-    onClick={onClick}
-    >
+      borderBottom: '1px solid #f1f5f9'
+    }}>
       <div style={{ flex: 1 }}>
-        <h3 style={{ margin: '0 0 4px', fontSize: '1rem', color: isDestructive ? '#ef4444' : '#1e293b' }}>{title}</h3>
+        <h3 style={{ margin: '0 0 4px', fontSize: '1rem', color: '#1e293b' }}>{title}</h3>
         {description && <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>{description}</p>}
       </div>
       {onToggle && (
@@ -115,12 +97,7 @@ export default function Settings() {
         <div style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
           <SettingItem title="Profile Settings" />
           <SettingItem title="Change Password" />
-          <SettingItem 
-            title="Sign Out" 
-            description="Log out of your account"
-            onClick={handleLogout}
-            isDestructive={true}
-          />
+          <SettingItem title="Sign Out" />
         </div>
       </section>
 
