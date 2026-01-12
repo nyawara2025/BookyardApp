@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { chatService } from '../services/api'
-import { getStoredUser } from '../utils/apiClient'
 
 export default function Chat() {
   const [messages, setMessages] = useState([
@@ -38,14 +37,7 @@ export default function Chat() {
     setIsTyping(true)
 
     try {
-      // Get user info for context
-      const user = getStoredUser();
-      const context = {
-        parentEmail: user?.email || '',
-        parentId: user?.id || '',
-      };
-      
-      const response = await chatService.sendMessage(userMessage.text, context)
+      const response = await chatService.sendMessage(userMessage.text)
       
       const botMessage = {
         id: Date.now() + 1,
