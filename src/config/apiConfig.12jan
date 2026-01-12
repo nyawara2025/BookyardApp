@@ -17,9 +17,6 @@ export const API_ENDPOINTS = {
   getStudentFees: `${getBaseUrl()}/student-fees`,
   getTransactionHistory: `${getBaseUrl()}/transaction-history`,
   processPayment: `${getBaseUrl()}/process-payment`,
-  
-  // Homework Operations
-  parentHomework: `${getBaseUrl()}/parent-homework`,
 };
 
 // Webhook paths (for reference)
@@ -28,7 +25,6 @@ export const WEBHOOK_PATHS = {
   getStudentFees: 'student-fees',
   getTransactionHistory: 'transaction-history',
   processPayment: 'process-payment',
-  parentHomework: 'parent-homework',
 };
 
 export default {

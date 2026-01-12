@@ -48,19 +48,8 @@ const apiRequest = async (url, options = {}) => {
     }
 
     // Parse JSON response
-    const text = await response.text();
-    
-    // Handle empty responses
-    if (!text || text.trim() === '') {
-      throw new Error('Empty response from server');
-    }
-    
-    try {
-      const data = JSON.parse(text);
-      return data;
-    } catch (parseError) {
-      throw new Error(`Invalid JSON response: ${parseError.message}`);
-    }
+    const data = await response.json();
+    return data;
 
   } catch (error) {
     clearTimeout(timeoutId);
@@ -81,7 +70,7 @@ const apiRequest = async (url, options = {}) => {
 /**
  * Login parent user via n8n webhook
  * @param {string} email - Parent email
- * @param {string} password - Parent password (student admission number)
+ * @param {string} password - Parent password
  * @returns {Promise<object>} - User data and auth token
  */
 export const loginParent = async (email, password) => {
@@ -95,30 +84,14 @@ export const loginParent = async (email, password) => {
     throw new Error('Invalid response from server');
   }
 
-  // Parse student_name into first_name and last_name
-  let first_name = response.first_name;
-  let last_name = response.last_name;
-  
-  if (response.student_name && (!first_name || !last_name)) {
-    // Split "Alex Nyawira" into ["Alex", "Nyawira"]
-    const nameParts = response.student_name.split(' ');
-    first_name = nameParts[0] || '';
-    last_name = nameParts.slice(1).join(' ') || '';
-  }
-
-  // Store auth data - accept fields that N8N actually returns
+  // Store auth data
   const userData = {
     id: response.id,
-    first_name: first_name,
-    last_name: last_name,
+    first_name: response.first_name,
+    last_name: response.last_name,
     email: response.email,
     phone: response.phone,
-    // Accept both admission_no (from N8N) and studentCode (original expectation)
-    studentCode: response.admission_no || response.studentCode,
-    // Additional fields N8N returns
-    student_id: response.student_id,
-    student_name: response.student_name,
-    grade: response.grade,
+    studentCode: response.studentCode,
   };
 
   localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(userData));
@@ -130,16 +103,12 @@ export const loginParent = async (email, password) => {
 /**
  * Get student fees for the logged-in parent
  * @param {string} parentId - The parent's UUID
- * @param {string} admissionNo - The student's admission number
  * @returns {Promise<array>} - Array of student fee data
  */
-export const getStudentFees = async (parentId, admissionNo) => {
+export const getStudentFees = async (parentId) => {
   const response = await apiRequest(API_ENDPOINTS.getStudentFees, {
     method: 'POST',
-    body: JSON.stringify({ 
-      id: parentId,
-      admission_no: admissionNo 
-    }),
+    body: JSON.stringify({ id: parentId }),
   });
 
   // Handle different response formats
@@ -153,14 +122,6 @@ export const getStudentFees = async (parentId, admissionNo) => {
   
   if (response.data) {
     return response.data;
-  }
-  
-  // Handle direct object response (single student)
-  if (response && typeof response === 'object') {
-    // Check if it's a valid fee record (has key fields like balance, student_name, etc.)
-    if (response.balance !== undefined || response.student_name || response.admission_no) {
-      return [response];
-    }
   }
 
   return [];
@@ -208,33 +169,6 @@ export const processPayment = async (paymentData) => {
 };
 
 /**
- * Get homework assignments for the logged-in parent
- * @param {string} parentId - The parent's UUID
- * @returns {Promise<object>} - Object with students and their homework assignments
- */
-export const getHomework = async (parentId) => {
-  const response = await apiRequest(API_ENDPOINTS.parentHomework, {
-    method: 'POST',
-    body: JSON.stringify({ id: parentId }),
-  });
-
-  // Handle different response formats
-  if (response && response.students) {
-    return response;
-  }
-  
-  if (Array.isArray(response)) {
-    return { students: response };
-  }
-  
-  if (response && typeof response === 'object') {
-    return response;
-  }
-
-  return { students: [] };
-};
-
-/**
  * Get the stored parent ID
  * @returns {string|null} - Parent UUID or null
  */
@@ -273,7 +207,6 @@ export default {
   getStudentFees,
   getTransactionHistory,
   processPayment,
-  getHomework,
   getStoredParentId,
   getStoredUser,
   clearAuthData,

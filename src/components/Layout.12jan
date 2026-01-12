@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { Home, MessageCircle, Info, Settings, GraduationCap, BookOpen } from 'lucide-react'
+import { Home, MessageCircle, Info, Settings, GraduationCap } from 'lucide-react'
 
 const Layout = () => {
   return (
@@ -30,10 +30,6 @@ const Layout = () => {
         background: 'white'
       }}>
         <NavLink to="/" style={navStyle}>Home</NavLink>
-        <NavLink to="/homework" style={navStyle}>
-          <BookOpen size={18} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-          Homework
-        </NavLink>
         <NavLink to="/chat" style={navStyle}>Chat</NavLink>
         <NavLink to="/info" style={navStyle}>Info</NavLink>
         <NavLink to="/settings" style={navStyle}>Settings</NavLink>
@@ -50,3 +46,4 @@ const navStyle = ({ isActive }) => ({
 })
 
 export default Layout
+
