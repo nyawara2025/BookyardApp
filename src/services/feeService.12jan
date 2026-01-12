@@ -103,20 +103,29 @@ export const getCurrentTermSummary = async (studentId = null) => {
  */
 export const getAllStudentSummaries = async () => {
   const fees = await getStudentFees();
+  console.log('[feeService] Raw fees from API:', fees);
+  console.log('[feeService] Number of students:', fees?.length || 0);
   
   if (!fees || fees.length === 0) {
+    console.log('[feeService] No fees found, returning empty array');
     return [];
   }
   
-  return fees.map((student, index) => ({
-    studentId: student.student_id || student.admission_no || `student-${index}`,
-    studentName: student.student_name || student.studentName || student.name || `${student.first_name} ${student.last_name}`,
-    grade: student.grade,
-    totalFeeDue: parseFloat(student.total_fee_due) || 0,
-    totalPaid: parseFloat(student.total_paid) || 0,
-    balance: parseFloat(student.balance) || 0,
-    status: (parseFloat(student.balance) || 0) > 0 ? 'pending' : 'paid'
-  }));
+  const result = fees.map(student => {
+    console.log('[feeService] Processing student:', student?.student_name || student?.studentName);
+    return {
+      studentId: student.student_id,
+      studentName: student.student_name || student.studentName || student.name || `${student.first_name} ${student.last_name}`,
+      grade: student.grade,
+      totalFeeDue: parseFloat(student.total_fee_due) || 0,
+      totalPaid: parseFloat(student.total_paid) || 0,
+      balance: parseFloat(student.balance) || 0,
+      status: (parseFloat(student.balance) || 0) > 0 ? 'pending' : 'paid'
+    };
+  });
+  
+  console.log('[feeService] Final student summaries:', result);
+  return result;
 };
 
 /**

@@ -46,20 +46,13 @@ export default function FeeDetails() {
       const allStudents = await getAllStudentSummaries();
       setStudents(allStudents);
       
-      // Auto-select first student and use their data directly
-      if (allStudents.length > 0) {
+      // Load aggregate summary for the main balance card
+      const summary = await getCurrentTermSummary();
+      setFeeData(summary);
+      
+      // Auto-select first student with balance if none selected
+      if (allStudents.length > 0 && !selectedStudent) {
         setSelectedStudent(allStudents[0]);
-        setFeeData({
-          studentId: allStudents[0].studentId,
-          studentName: allStudents[0].studentName,
-          grade: allStudents[0].grade,
-          totalFeeDue: allStudents[0].totalFeeDue,
-          totalPaid: allStudents[0].totalPaid,
-          balance: allStudents[0].balance,
-          status: allStudents[0].balance > 0 ? 'pending' : 'paid'
-        });
-      } else {
-        setFeeData(null);
       }
     } catch (e) {
       console.error('Error loading fee data:', e);
